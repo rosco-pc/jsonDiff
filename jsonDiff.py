@@ -8,19 +8,18 @@ import collections
 
 cli = False
 try:
-    import tkinter as tk
-    import tkinter.ttk as ttk
-    from tkinter import filedialog as fd
+  import tkinter as tk
+  import tkinter.ttk as ttk
+  from tkinter import filedialog as fd
+
+  TK_VERSION = tk.TkVersion
+  if TK_VERSION < 8.6:
+    from PIL import ImageTk, Image
+  PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
+  RSC_PATH = os.path.join(PROJECT_PATH, 'resource')
+  USER_PATH = os.path.expanduser("~")
 except ImportError:
     cli = True
-
-PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
-RSC_PATH = os.path.join(PROJECT_PATH, 'resource')
-USER_PATH = os.path.expanduser("~")
-TK_VERSION = tk.TkVersion
-
-if TK_VERSION < 8.6:
-  from PIL import ImageTk, Image
 
 
 class Comparison:
@@ -31,6 +30,8 @@ class Comparison:
     self.jsonView = {'1': None, '2': None}
     self.mismatch = collections.OrderedDict()
     self.mismatchIndex = None
+    self.search = {'1': [], '2': []}
+    self.searchIndex = {'1': -1, '2': -1}
       
   def compare(self):
     self.mismatch = collections.OrderedDict()
