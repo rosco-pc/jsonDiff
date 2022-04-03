@@ -11,12 +11,17 @@ try:
     import tkinter as tk
     import tkinter.ttk as ttk
     from tkinter import filedialog as fd
-except Import:
+except ImportError:
     cli = True
 
 PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
 RSC_PATH = os.path.join(PROJECT_PATH, 'resource')
 USER_PATH = os.path.expanduser("~")
+TK_VERSION = tk.TkVersion
+
+if TK_VERSION < 8.6:
+  from PIL import ImageTk, Image
+
 
 class Comparison:
   def __init__(self, index=0):
@@ -247,6 +252,12 @@ class jsonDiffApp:
     self.enableCompare()
       
   def buildUI(self):
+    def loadImage(path):
+      if TK_VERSION < 8.6:
+        return ImageTk.PhotoImage(Image.open(path))
+      else:
+        return tk.PhotoImage(file=path)
+        
     # variable to interact with UI
     self.searchStr = tk.StringVar(value='')
     self.mismatchMsg = tk.StringVar(value='')
@@ -254,18 +265,18 @@ class jsonDiffApp:
     self.jsonPath['2'] = tk.StringVar(value='')
     
     # images
-    self.refreshImg_24 = tk.PhotoImage(file=os.path.join(RSC_PATH,'24x24/redo.gif'))
-    self.openImg_24 = tk.PhotoImage(file=os.path.join(RSC_PATH,'24x24/file-import.gif'))
-    self.searchImg_24 = tk.PhotoImage(file=os.path.join(RSC_PATH,'24x24/search.gif'))
-    self.nextImg_24 = tk.PhotoImage(file=os.path.join(RSC_PATH,'24x24/angle_right.gif'))
-    self.prevImg_24 = tk.PhotoImage(file=os.path.join(RSC_PATH,'24x24/angle_left.gif'))
-    self.openImg = tk.PhotoImage(file=os.path.join(RSC_PATH,'48x48/folder-open.gif'))
-    #self.closeImg = tk.PhotoImage(file=os.path.join(RSC_PATH,'48x48/close.gif'))
-    self.exitImg = tk.PhotoImage(file=os.path.join(RSC_PATH,'48x48/close.gif'))
-    self.firstImg = tk.PhotoImage(file=os.path.join(RSC_PATH,'48x48/angle-double-up.gif'))
-    self.lastImg = tk.PhotoImage(file=os.path.join(RSC_PATH,'48x48/angle-double-down.gif'))
-    self.nextImg = tk.PhotoImage(file=os.path.join(RSC_PATH,'48x48/angle-down.gif'))
-    self.prevImg = tk.PhotoImage(file=os.path.join(RSC_PATH,'48x48/angle-up.gif'))
+    self.refreshImg_24 = loadImage(os.path.join(RSC_PATH,'24x24/redo.png'))
+    self.openImg_24 = loadImage(os.path.join(RSC_PATH,'24x24/file-import.png'))
+    self.searchImg_24 = loadImage(os.path.join(RSC_PATH,'24x24/search.png'))
+    self.nextImg_24 = loadImage(os.path.join(RSC_PATH,'24x24/angle_right.png'))
+    self.prevImg_24 = loadImage(os.path.join(RSC_PATH,'24x24/angle_left.png'))
+    self.openImg = loadImage(os.path.join(RSC_PATH,'48x48/folder-open.png'))
+    #self.closeImg = loadImageos.path.join(RSC_PATH,'48x48/close.png'))
+    self.exitImg = loadImage(os.path.join(RSC_PATH,'48x48/close.png'))
+    self.firstImg = loadImage(os.path.join(RSC_PATH,'48x48/angle-double-up.png'))
+    self.lastImg = loadImage(os.path.join(RSC_PATH,'48x48/angle-double-down.png'))
+    self.nextImg = loadImage(os.path.join(RSC_PATH,'48x48/angle-down.png'))
+    self.prevImg = loadImage(os.path.join(RSC_PATH,'48x48/angle-up.png'))
 
     # build ui
     self.main = ttk.Frame(self.mainwindow)
@@ -287,7 +298,7 @@ class jsonDiffApp:
     
     self.main.pack(expand=1, fill='both', side='top')
     self.mainwindow.title('jsonDiff')
-    self.mainwindow.iconphoto(False, tk.PhotoImage(file=os.path.join(RSC_PATH,'jsonDiff.gif')))
+    self.mainwindow.iconphoto(False, loadImage(os.path.join(RSC_PATH,'jsonDiff.png')))
     self.mainwindow.configure(width='600', height='400')
     self.mainwindow.minsize(600, 400)
 
@@ -421,10 +432,10 @@ class jsonDiffApp:
     separator = ttk.Separator(iconBar)
     separator.configure(orient='horizontal')
     separator.pack(fill='y', padx='7', pady='1', side='left')
-    self.searchPrevBtn = ttk.Button(iconBar)
-    self.searchPrevBtn.configure(image=self.nextImg_24, style='Toolbutton',
+    self.searchNextBtn = ttk.Button(iconBar)
+    self.searchNextBtn.configure(image=self.nextImg_24, style='Toolbutton',
                                  state='disabled', command=self.searchNext)
-    self.searchPrevBtn.pack(padx='1', pady='1', side='right')
+    self.searchNextBtn.pack(padx='1', pady='1', side='right')
     self.searchPrevBtn = ttk.Button(iconBar)
     self.searchPrevBtn.configure(image=self.prevImg_24, style='Toolbutton',
                                  state='disabled', command=self.searchPrev)
@@ -543,12 +554,12 @@ class jsonDiffApp:
   def searchProperty(self, event=None):
     if not self.searchStr:
       return
-    self.curentComparison.search = {'1':[],'2':[]}
+    self.currentComparison.search = {'1':[], '2':[]}
     self.search(self.currentComparison.jsonView['1'],'1')
     self.search(self.currentComparison.jsonView['2'],'2')
-    # dis-/en-able search next & prev buttons
-    enabled = len(self.curentComparison.search['1']) > 1 or \
-              len(self.curentComparison.search['2']) > 1
+    # (dis-)enable search next & prev buttons
+    enabled = len(self.currentComparison.search['1']) > 1 or \
+              len(self.currentComparison.search['2']) > 1
     self.searchNextBtn.configure(state='normal' if enabled else 'disabled')
     self.searchPrevBtn.configure(state='normal' if enabled else 'disabled')
     self.currentComparison.searchIndex = {'1':-1, '2':-1}
@@ -558,14 +569,14 @@ class jsonDiffApp:
     def get_all_children(tree, item=""):
       children = tree.get_children(item)
       for child in children:
-        children += self.get_all_children(tree, child)
+        children += get_all_children(tree, child)
       return children
 
     for item_id in get_all_children(tree):
-      tree.item(item, open=False)                               # Collapse tree view
-      item_text = tree.item(item_id, 'text').text               # get item text
-      if self.searchStr.get().lower() in str(item_text).lower(): # matches search term?
-        self.curentComparison.search[f].append((tree,item_id))  # Yes add the searchList
+      tree.item(item_id, open=False)                              # Collapse tree view
+      item_text = str(tree.item(item_id, 'text'))                 # get item text
+      if self.searchStr.get().lower() in item_text.lower():       # matches search term?
+        self.currentComparison.search[f].append((tree,item_id))   # Yes add the searchList
 
   def searchNext(self):
     for jsonId in self.currentComparison.search:
