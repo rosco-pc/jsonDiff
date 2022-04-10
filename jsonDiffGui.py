@@ -1,6 +1,13 @@
+import os
+import sys
+import json
+
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog as fd
+
+from jsonComparison import Comparison
+
 
 TK_VERSION = tk.TkVersion
 if TK_VERSION < 8.6:
@@ -123,7 +130,7 @@ class App:
   newDiffTab = 0                          # 
   jsonPath = {'1': None, '2': None}
   
-  def __init__(self, args, master=None, path=USER_PATH):
+  def __init__(self, args, Comparison, master=None, path=USER_PATH):
     self.mainwindow = tk.Tk() if master is None else tk.Toplevel(master)
     self.userPath = path
     self. buildUI()
@@ -428,6 +435,8 @@ class App:
            'prev': self.currentComparison.prevMismatch}
            
     mismatch = msg[action]()
+    if mismatch is None:
+      return
     node = mismatch['node']
     # Select path in jsonView1 and jsonView2
     for node in mismatch['node']:
@@ -606,3 +615,5 @@ class App:
       self.mainwindow.mainloop()
 
 
+if __name__=='__main__':
+  print('to be imported')  
